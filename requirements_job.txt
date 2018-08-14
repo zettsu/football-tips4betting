@@ -1,0 +1,34 @@
+Hi, I need a desktop scraper/parser app(for win 7) for the site tips4betting.com, it should be for continual updating of the database so it's not just a fixed number of pages.
+The data should be saved as XML files:
+
+http://tips4betting.com
+
+http://tips4betting.com/history.php
+
+http://tips4betting.com/arhive/betting-tips-arhive-on-2018-07-01.html
+
+It should keep the results/started games and fixtures(upcoming games) in separate directories.
+
+I need this data:
+
+Sport: Soccer
+Source: tips4betting
+Country
+League
+Date
+Time
+Home team
+Away team
+Score
+Betting Odds
+Chances to win (1X2)
+Under/Over Betting Tip Total Goals
+
+Here are some images for description of the parts needed to be scraped:
+
+https://snag.gy/ybChdY.jpg
+
+https://snag.gy/QrdLyI.jpg
+
+Are you able to do it?
+How much would it cost?
