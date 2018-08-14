@@ -2,12 +2,14 @@
   <Match>
     <Sport>Soccer</Sport>
     <Source>TIPS4BETTING</Source>
-    <Time> 17:30 </Time>
+    <Date>14-08-2018</Date>
+    <Time>Half Time</Time>
     <Country>Champions League</Country>
     <League>Qualification</League>
     <Odds1>1.74</Odds1>
     <Odds2>3.60</Odds2>
     <Odds3>4.55</Odds3>
     <UnderOver>39%</UnderOver>
+    <MatchScore>0 - 0</MatchScore>
   </Match>
 </Matches>

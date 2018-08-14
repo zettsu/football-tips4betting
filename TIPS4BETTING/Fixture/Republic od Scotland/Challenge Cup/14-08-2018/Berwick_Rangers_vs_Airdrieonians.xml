@@ -2,6 +2,7 @@
   <Match>
     <Sport>Soccer</Sport>
     <Source>TIPS4BETTING</Source>
+    <Date>14-08-2018</Date>
     <Time> 18:45 </Time>
     <Country>Republic od Scotland</Country>
     <League>Challenge Cup</League>
@@ -9,5 +10,6 @@
     <Odds2>4.50</Odds2>
     <Odds3>1.41</Odds3>
     <UnderOver>33%</UnderOver>
+    <MatchScore>-:-</MatchScore>
   </Match>
 </Matches>

@@ -33,8 +33,8 @@ def cleanString(string):
         string = string.decode('utf-8')
     return normalize('NFKD', string).encode('ASCII', 'ignore')
 
-def scrapeNow(date):
-    url = TIPS4BETTING_TIPS_URL
+def scrapeNow(date, url):
+    url = url
     page = ''
 
     try:
@@ -46,12 +46,11 @@ def scrapeNow(date):
         print("Can't get data from: " + date)
         return
 
-    time.sleep(5)
     soup = BeautifulSoup(page.content, 'html.parser')
 
     tips_table = soup.find(attrs={'id': 'tips'})
     rows = tips_table.find_all('tr')
-    print len(rows)
+
     del rows[0]
     for row in rows:
         try:
@@ -68,11 +67,12 @@ def scrapeNow(date):
             country_text = cleanString(country_tag.find_next('span')['title'])
             time_text = time_tag.text
 
-            if(len(time_text.split(':')) < 1):
+            result = time_text.lstrip().lstrip().split(':')
+            if(len(result) < 2):
+                print 'skipping '+country_text
                 continue
 
             league_text = league_tag.text
-            country_text =  cleanString(country_tag.find_next('span')['title'])
             match_text = match_tag.find_next('a')['href'].rpartition('/')[2].replace('.html','').replace('-','_')
             under_over_tag_text = under_over_tag.text
             score_text = score_tag.text
@@ -80,7 +80,8 @@ def scrapeNow(date):
             odds_1_text = betting_odds_1_tag.text
             odds_2_text = betting_odds_2_tag.text
             under_over_text = under_over_tag.text
-        except:
+        except Exception as e:
+            print e
             print 'error'
 
         Matches = etree.Element('Matches')
@@ -90,7 +91,7 @@ def scrapeNow(date):
         #
         appendXMLTag(Match, 'Sport', SPORT)
         appendXMLTag(Match, 'Source', SOURCE)
-        #appendXMLTag(Match, 'Date', dt)
+        appendXMLTag(Match, 'Date', today)
         appendXMLTag(Match, 'Time', time_text)
         appendXMLTag(Match, 'Country', country_text)
         appendXMLTag(Match, 'League', league_text)
@@ -101,9 +102,7 @@ def scrapeNow(date):
         appendXMLTag(Match, 'Odds2', odds_1_text)
         appendXMLTag(Match, 'Odds3', odds_2_text)
         appendXMLTag(Match, 'UnderOver', under_over_text)
-        # appendXMLTag(Match, 'AverOddsX', odds[name][1])
-        # appendXMLTag(Match, 'AverOdds2', odds[name][2])
-        # appendXMLTag(Match, 'MatchScore', scores[name])
+        appendXMLTag(Match, 'MatchScore', score_text)
         filePath = ''
         try:
             filePath = DIRECTORY_FIXTURE + '/' + country_text.encode('utf-8') + '/' +  league_text + '/' + today+"/"
@@ -116,6 +115,7 @@ def scrapeNow(date):
                 et.write(xmlFile, pretty_print=True)
         except:
             logScrapper("Can't save file: " + filePath + '/' + match_text + '.xml' + ", please run in Administrator mode")
+
     # b = soup.find_all('script')
     # dates = []
     #
@@ -210,7 +210,11 @@ def scrapeNow(date):
 
 today = datetime.datetime.now().strftime("%d-%m-%Y")
 print today
-scrapeNow("14-08-2018")
+tomorrow = (datetime.datetime.now() + datetime.timedelta(days=1)).strftime("%d-%m-%Y")
+print tomorrow
+scrapeNow(today, TIPS4BETTING_TIPS_URL)
+
+scrapeNow(tomorrow, TIPS4BETTING_TIPS_URL_TOMORROW)
 #oldScrappe(today)
 
 logScrapper("Scraping is Finished!")

@@ -2,6 +2,7 @@
   <Match>
     <Sport>Soccer</Sport>
     <Source>TIPS4BETTING</Source>
+    <Date>14-08-2018</Date>
     <Time> 18:45 </Time>
     <Country>United Kingdom of Great Britain &amp; Northern Ireland</Country>
     <League>National League</League>
@@ -9,5 +10,6 @@
     <Odds2>3.40</Odds2>
     <Odds3>2.66</Odds3>
     <UnderOver>23%</UnderOver>
+    <MatchScore>-:-</MatchScore>
   </Match>
 </Matches>
