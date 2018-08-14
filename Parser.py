@@ -1,5 +1,9 @@
 import datetime
 import logging
+import re
+import time
+
+from unicodedata import normalize
 
 import requests
 from lxml import etree
@@ -10,6 +14,7 @@ import os
 
 from parameters import *
 
+pattern = re.compile(r'\s+')
 
 def logScrapper(msg):
     today = datetime.datetime.now().strftime("%d_%m_%Y")
@@ -22,10 +27,16 @@ def appendXMLTag(parent, name, value):
     element.text = value
     parent.append(element)
 
+
+def cleanString(string):
+    if isinstance(string, str):
+        string = string.decode('utf-8')
+    return normalize('NFKD', string).encode('ASCII', 'ignore')
+
 def scrapeNow(date):
     url = TIPS4BETTING_TIPS_URL
     page = ''
-    print url
+
     try:
         page = requests.get(url)
     except:
@@ -34,29 +45,77 @@ def scrapeNow(date):
     if page.status_code != 200:
         print("Can't get data from: " + date)
         return
-        
+
+    time.sleep(5)
     soup = BeautifulSoup(page.content, 'html.parser')
 
     tips_table = soup.find(attrs={'id': 'tips'})
     rows = tips_table.find_all('tr')
-
+    print len(rows)
     del rows[0]
     for row in rows:
-        time_tag = row.find_next('td', attrs={'class':'t_mob'})
-        time_text = time_tag.text
-        league_tag = time_tag.find_next('td', attrs={'class': 't_mob'})
-        league_name = league_tag.text
-        match_tag = league_tag.find_next('td', attrs={'class': 't_mob'})
-        match = match_tag.find_next('a').text
-        score_tag = match_tag.find_next('td', attrs={'class': 't_mob'})
-        betting_odds_0 = score_tag.find_next('td')
-        betting_odds_1 = betting_odds_0.find_next('td')
-        betting_odds_2 = betting_odds_1.find_next('td')
+        try:
+            country_tag = row.find_next('td')
+            time_tag = country_tag.find_next('td')
+            league_tag = time_tag.find_next('td')
+            match_tag = league_tag.find_next('td')
+            score_tag = match_tag.find_next('td')
+            betting_odds_0_tag = score_tag.find_next('td')
+            betting_odds_1_tag = betting_odds_0_tag.find_next('td')
+            betting_odds_2_tag = betting_odds_1_tag.find_next('td')
+            under_over_tag = betting_odds_2_tag.find_next('td')
 
-        print betting_odds_0
+            country_text = cleanString(country_tag.find_next('span')['title'])
+            time_text = time_tag.text
 
+            if(len(time_text.split(':')) < 1):
+                continue
 
+            league_text = league_tag.text
+            country_text =  cleanString(country_tag.find_next('span')['title'])
+            match_text = match_tag.find_next('a')['href'].rpartition('/')[2].replace('.html','').replace('-','_')
+            under_over_tag_text = under_over_tag.text
+            score_text = score_tag.text
+            odds_0_text = betting_odds_0_tag.text
+            odds_1_text = betting_odds_1_tag.text
+            odds_2_text = betting_odds_2_tag.text
+            under_over_text = under_over_tag.text
+        except:
+            print 'error'
 
+        Matches = etree.Element('Matches')
+
+        Match = etree.Element('Match')
+        Matches.append(Match)
+        #
+        appendXMLTag(Match, 'Sport', SPORT)
+        appendXMLTag(Match, 'Source', SOURCE)
+        #appendXMLTag(Match, 'Date', dt)
+        appendXMLTag(Match, 'Time', time_text)
+        appendXMLTag(Match, 'Country', country_text)
+        appendXMLTag(Match, 'League', league_text)
+        #appendXMLTag(Match, 'HomeTeam', names[name].split('-')[0].strip())
+        #appendXMLTag(Match, 'AwayTeam', names[name].split('-')[1].strip())
+        #
+        appendXMLTag(Match, 'Odds1', odds_0_text)
+        appendXMLTag(Match, 'Odds2', odds_1_text)
+        appendXMLTag(Match, 'Odds3', odds_2_text)
+        appendXMLTag(Match, 'UnderOver', under_over_text)
+        # appendXMLTag(Match, 'AverOddsX', odds[name][1])
+        # appendXMLTag(Match, 'AverOdds2', odds[name][2])
+        # appendXMLTag(Match, 'MatchScore', scores[name])
+        filePath = ''
+        try:
+            filePath = DIRECTORY_FIXTURE + '/' + country_text.encode('utf-8') + '/' +  league_text + '/' + today+"/"
+            try:
+                os.makedirs(filePath)
+            except:
+                pass
+                xmlFile = open(filePath + '/' + match_text + '.xml', 'wb')
+                et = etree.ElementTree(Matches)
+                et.write(xmlFile, pretty_print=True)
+        except:
+            logScrapper("Can't save file: " + filePath + '/' + match_text + '.xml' + ", please run in Administrator mode")
     # b = soup.find_all('script')
     # dates = []
     #
@@ -143,17 +202,7 @@ def scrapeNow(date):
     #     appendXMLTag(Match, 'AverOdds2', odds[name][2])
     #     appendXMLTag(Match, 'MatchScore', scores[name])
     #
-         #try:
-            #filePath = DIRECTORY_RESULTS + '/' + country_name.replace('/', ' ') + '/' + league_name.replace('/', ' ') + '/' + dt.replace('/', ' ')
-         #   try:
-                #os.makedirs(filePath)
-         #   except:
-         #       pass
-                #xmlFile = open(filePath + '/' + names[name].strip().replace('/', ' ') + '.xml', 'wb')
-                #et = etree.ElementTree(Matches)
-                #et.write(xmlFile, pretty_print=True)
-        #except:
-            #logScrapper("Can't save file: " + filePath + '/' + names[name].strip() + '.xml' + ", please run in Administrator mode")
+
 
     logScrapper('Scraped Today at: ' + date)
 
