@@ -33,6 +33,14 @@ def cleanString(string):
         string = string.decode('utf-8')
     return normalize('NFKD', string).encode('ASCII', 'ignore')
 
+def save(file_path, match_text, Xml_el):
+    try:
+        os.makedirs(file_path)
+    except:
+        pass
+        xmlFile = open(file_path + '/' + match_text + '.xml', 'wb')
+        et = etree.ElementTree(Xml_el)
+        et.write(xmlFile, pretty_print=True)
 def scrapeNow(date, url):
     url = url
     page = ''
@@ -106,16 +114,10 @@ def scrapeNow(date, url):
 
         Matches.append(Match)
 
+        filePath = DIRECTORY_FIXTURE + '/' + country_text.encode('utf-8') + '/' + league_text + '/' + today
+
         try:
-            filePath = DIRECTORY_FIXTURE + '/' + country_text.encode('utf-8') + '/' +  league_text + '/' + today
-            try:
-                os.makedirs(filePath)
-            except:
-                pass
-                xmlFile = open(filePath + '/' + match_text + '.xml', 'wb')
-                et = etree.ElementTree(Matches)
-                et.write(xmlFile, pretty_print=True)
-                time.sleep(10)
+            save(filePath, match_text, Matches)
         except:
             logScrapper("Can't save file: " + filePath + '/' + match_text + '.xml' + ", please run in Administrator mode")
 
