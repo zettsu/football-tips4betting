@@ -1,3 +1,5 @@
+import traceback
+
 from parameters import *
 
 import datetime
@@ -15,7 +17,7 @@ pattern = re.compile(r'\s+')
 
 def log_scrapper(msg):
     today = datetime.datetime.now().strftime("%d_%m_%Y")
-    filename = "parser_log_"+today+".log"
+    filename = "./logs/parser_log_"+today+".log"
     logging.basicConfig(filename=filename, level=logging.INFO)
     now = datetime.datetime.now().strftime("%d_%m_%Y %H:%M")
     logging.info(now + " - " + msg)
@@ -54,6 +56,17 @@ def get_page(url):
 
     return BeautifulSoup(page.content, 'html.parser')
 
+
+def scrape_stats_match(url):
+    url = TIPS4BETTING_TIPS_URL + url
+    soup = get_page(url)
+
+    tips_table = soup.find(attrs={'class': 'tableMid'})
+    total_goals = tips_table.find_all('tr')[3].find_all('td')[2].text
+
+    return total_goals
+
+
 def scrape_today():
     today       = datetime.datetime.now().strftime("%d-%m-%Y")
     url         = TIPS4BETTING_TIPS_URL
@@ -63,7 +76,7 @@ def scrape_today():
 
     soup = get_page(url)
 
-    tips_table = soup.find(attrs={'id': 'tips'})
+    tips_table = soup.find('table', attrs={'id': 'tips'})
     rows = tips_table.find_all('tr')
 
     del rows[0]
@@ -99,7 +112,10 @@ def scrape_today():
                 log_scrapper('skipping match '+ match_text + ' of day '+ today)
                 continue
         except Exception as e:
-            log_scrapper(e)
+            log_scrapper(traceback.format_exc())
+
+
+        goals = scrape_stats_match(match_tag.find_next('a')['href'])
 
         matches = etree.Element('Matches')
         match = etree.Element('Match')
@@ -117,6 +133,7 @@ def scrape_today():
         append_xml_tag(match, 'Odds3', odds_2_text)
         append_xml_tag(match, 'UnderOver', under_over_text)
         append_xml_tag(match, 'MatchScore', score_text)
+        append_xml_tag(match, 'TotalGoalsTip', goals)
 
         matches.append(match)
         file_path = directory + '/' + country_text.encode('utf-8') + '/' + league_text + '/' + today
@@ -124,7 +141,7 @@ def scrape_today():
         try:
             save(file_path, match_text, matches)
         except Exception as e:
-            #log_scrapper(e)
+            log_scrapper(traceback.format_exc())
             log_scrapper("Can't save file: " + file_path + '/' + match_text + '.xml' + ", please run in Administrator mode")
 
 
@@ -173,7 +190,7 @@ def scrape_tomorrow():
                 log_scrapper('skipping match '+ match_text + ' of day '+ tomorrow)
                 continue
         except Exception as e:
-            log_scrapper(e)
+            log_scrapper(traceback.format_exc())
 
         matches = etree.Element('Matches')
         match = etree.Element('Match')
@@ -198,6 +215,7 @@ def scrape_tomorrow():
         try:
             save(file_path, match_text, matches)
         except:
+            log_scrapper(traceback.format_exc())
             log_scrapper("Can't save file: " + file_path + '/' + match_text + '.xml' + ", please run in Administrator mode")
 
 
@@ -208,7 +226,7 @@ def scrape_yesterday():
     url = TIPS4BETTING_TIPS_URL_YESTERDAY
     directory = DIRECTORY_RESULTS
 
-    log_scrapper('INIT TASK TOMORROW url=' + url)
+    log_scrapper('INIT TASK YESTERDAY url=' + url)
 
     soup = get_page(url)
 
@@ -241,7 +259,7 @@ def scrape_yesterday():
             odds_2_text = betting_odds_2_tag.text
             under_over_text = under_over_tag.text
         except Exception as e:
-            log_scrapper(e)
+            log_scrapper(traceback.format_exc())
 
         matches = etree.Element('Matches')
         match = etree.Element('Match')
@@ -266,12 +284,11 @@ def scrape_yesterday():
         try:
             save(file_path, match_slug, matches)
         except Exception as e:
-            log_scrapper(e)
+            log_scrapper(traceback.format_exc())
 
 
 def scrape_results(day):
-    today = datetime.datetime.now().strftime("%d-%m-%Y")
-    url = TIPS4BETTING_TIPS_URL
+    url = TIPS4BETTING_ARCHIVE_URL + day + '.html'
     directory = DIRECTORY_RESULTS
 
     log_scrapper('INIT TASK RESULTS day=('+day+') url=' + url)
@@ -285,68 +302,71 @@ def scrape_results(day):
     for row in rows:
         try:
             country_tag = row.find_next('td')
-            time_tag = country_tag.find_next('td')
-            league_tag = time_tag.find_next('td')
+            league_tag = country_tag.find_next('td')
             match_tag = league_tag.find_next('td')
             score_tag = match_tag.find_next('td')
             betting_odds_0_tag = score_tag.find_next('td')
             betting_odds_1_tag = betting_odds_0_tag.find_next('td')
             betting_odds_2_tag = betting_odds_1_tag.find_next('td')
-            under_over_tag = betting_odds_2_tag.find_next('td')
 
+            chances_to_win_0_tag = betting_odds_2_tag.find_next('td')
+            chances_to_win_1_tag = chances_to_win_0_tag.find_next('td')
+            chances_to_win_2_tag = chances_to_win_1_tag.find_next('td')
+
+            bet_tip_tag = chances_to_win_2_tag.find_next('td')
+            under_over_tag = bet_tip_tag.find_next('td')
             country_text = clean_string(country_tag.find_next('span')['title'])
-            time_text = time_tag.text
 
-            league_text = league_tag.text
-            match_text = match_tag.find_next('a')['href'].rpartition('/')[2].replace('.html','').replace('-',' ')
-            teams_text = match_text.split(" vs ")
+            odds_0_text = betting_odds_0_tag.find_next('a').text
+            odds_1_text = betting_odds_1_tag.find_next('a').text
+            odds_2_text = betting_odds_2_tag.find_next('a').text
 
-            score_text = score_tag.text
-            odds_0_text = betting_odds_0_tag.text
-            odds_1_text = betting_odds_1_tag.text
-            odds_2_text = betting_odds_2_tag.text
+            chances_to_win_0_text = chances_to_win_0_tag.text
+            chances_to_win_1_text = chances_to_win_1_tag.text
+            chances_to_win_2_text = chances_to_win_2_tag.text
+
             under_over_text = under_over_tag.text
+            league_text = league_tag.text
+            score_text = score_tag.text
+            match_slug = match_tag.text.split('<span>')[0]
 
-            result = time_text.lstrip().lstrip().split(':')
-            if len(result) < 2:
-                log_scrapper('skipping match '+ match_text + ' of day '+ today)
-                continue
+            match_text = match_slug.split(' vs ')
         except Exception as e:
-            log_scrapper(e)
+            log_scrapper(traceback.format_exc())
 
         matches = etree.Element('Matches')
         match = etree.Element('Match')
 
         append_xml_tag(match, 'Sport', SPORT)
         append_xml_tag(match, 'Source', SOURCE)
-        append_xml_tag(match, 'Date', today)
-        append_xml_tag(match, 'Time', time_text)
+        append_xml_tag(match, 'Date', day)
         append_xml_tag(match, 'Country', country_text)
         append_xml_tag(match, 'League', league_text)
-        append_xml_tag(match, 'HomeTeam', teams_text[0])
-        append_xml_tag(match, 'AwayTeam', teams_text[1])
+        append_xml_tag(match, 'HomeTeam', match_text[0])
+        append_xml_tag(match, 'AwayTeam', match_text[1])
         append_xml_tag(match, 'Odds1', odds_0_text)
         append_xml_tag(match, 'Odds2', odds_1_text)
         append_xml_tag(match, 'Odds3', odds_2_text)
+        append_xml_tag(match, 'Chance1', chances_to_win_0_text)
+        append_xml_tag(match, 'Chance2', chances_to_win_1_text)
+        append_xml_tag(match, 'Chance3', chances_to_win_2_text)
         append_xml_tag(match, 'UnderOver', under_over_text)
         append_xml_tag(match, 'MatchScore', score_text)
 
         matches.append(match)
-        file_path = directory + '/' + country_text.encode('utf-8') + '/' + league_text + '/' + today
+        file_path = directory + '/' + country_text.encode('utf-8') + '/' + league_text + '/' + day
 
         try:
-            save(file_path, match_text, matches)
+            save(file_path, match_slug, matches)
         except Exception as e:
-            log_scrapper(e)
+            log_scrapper(traceback.format_exc())
 
 
-scrape_today()
-
+#scrape_today()
 #scrape_tomorrow()
-
 #scrape_yesterday()
 
 #html_url = TIPS4BETTING_ARCHIVE_URL + date_target + ".html"
-#scrape_results()
+scrape_results('2017-12-07')
 
 log_scrapper("Scraping is Finished!")
