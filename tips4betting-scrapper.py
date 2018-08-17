@@ -362,11 +362,10 @@ def scrape_results(day):
             log_scrapper(traceback.format_exc())
 
 
-#scrape_today()
-#scrape_tomorrow()
-#scrape_yesterday()
+scrape_today()
+scrape_tomorrow()
+scrape_yesterday()
 
-#html_url = TIPS4BETTING_ARCHIVE_URL + date_target + ".html"
 scrape_results('2017-12-07')
 
 log_scrapper("Scraping is Finished!")
