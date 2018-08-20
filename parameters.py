@@ -1,6 +1,6 @@
 import os
 
-BASE_URL = 'http://tips4betting.com/'
+BASE_URL = 'http://www.tips4betting.com/'
 TIPS4BETTING_TIPS_URL = BASE_URL
 TIPS4BETTING_TIPS_URL_TOMORROW = BASE_URL + "tomorrow.php"
 TIPS4BETTING_TIPS_URL_YESTERDAY = BASE_URL + "yesterday.php"
