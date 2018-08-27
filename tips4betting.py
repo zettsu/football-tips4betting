@@ -30,11 +30,13 @@ def clean_string(string):
     return normalize('NFKD', string).encode('ASCII', 'ignore')
 
 
-def save(file_path, match_text, Xml_el):
+def save(file_path, match_text, xml_el):
     try:
-        os.makedirs(file_path)
-        xml_file = open(file_path + '/' + match_text + '.xml', 'w')
-        Xml_el.writexml(xml_file)
+        if not os.path.exists(file_path):
+            os.makedirs(file_path)
+        xml_file = open(file_path + '/' + match_text + '.xml', 'wb')
+        et = etree.ElementTree(xml_el)
+        et.write(xml_file, pretty_print=True)
         xml_file.close()
     except Exception as e:
         log_scrapper(traceback.format_exc())
@@ -55,7 +57,7 @@ def get_page(url):
 
 def scrape_stats_match(url):
     url = url
-
+    total_goals = ''
     try:
         soup = get_page(url)
         tips_table = soup.find(attrs={'class': 'tableMid'})
@@ -116,6 +118,9 @@ def scrape_today(url):
             chances_win_1 = chances_win_1_tag.text
             chances_win_2 = chances_win_2_tag.text
             under_over_text     = under_over_tag.text
+            goals = '-:-'
+            if match_tag.find_next('a')['href'] != None:
+                goals = scrape_stats_match(match_tag.find_next('a')['href'])
 
         except Exception as e:
             log_scrapper(traceback.format_exc())
@@ -123,11 +128,6 @@ def scrape_today(url):
         if ":" not in time_text:
             log_scrapper('skipping match ' + match_text + ' of day ' + today)
             continue
-
-        if match_tag.find_next('a')['href'] != None:
-            goals = scrape_stats_match(match_tag.find_next('a')['href'])
-        else:
-            goals = ''
 
         matches = etree.Element('Matches')
         match = etree.Element('Match')
