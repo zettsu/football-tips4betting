@@ -4,7 +4,7 @@ tips4betting.com scrapper
 Executing python script tips4betting.py you have four options
 to retrieve data of matches
 
-Sometimes its needed to run it twice because page load slow or tag its broken.
+Sometimes its needed to run it twice because page load slow or tag is broken.
 
 Today matches, page of tips4bettings.com are random and not complete
 for that script loop on select country on home page and get all matches for that country
